@@ -1,0 +1,6 @@
+.DS_Store
+.build/
+mac/build/
+.swiftpm/
+__pycache__/
+*.pyc

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleName</key><string>HA Sync</string>
+  <key>CFBundleDisplayName</key><string>HA Sync</string>
+  <key>CFBundleIdentifier</key><string>com.donavanbecker.hasync</string>
+  <key>CFBundleExecutable</key><string>HASync</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+  <key>CFBundleShortVersionString</key><string>1.0.0</string>
+  <key>CFBundleVersion</key><string>1</string>
+  <key>LSMinimumSystemVersion</key><string>14.0</string>
+  <key>LSUIElement</key><true/>
+  <key>NSCalendarsFullAccessUsageDescription</key><string>HA Sync sends the calendars you choose to Home Assistant.</string>
+  <key>NSRemindersFullAccessUsageDescription</key><string>HA Sync sends the Reminders lists you choose to Home Assistant.</string>
+  <key>NSPhotoLibraryUsageDescription</key><string>HA Sync uploads photos from the albums you choose to Home Assistant.</string>
+  <key>NSAppleEventsUsageDescription</key><string>HA Sync reads the Notes folders you choose so it can send them to Home Assistant.</string>
+</dict>
+</plist>
