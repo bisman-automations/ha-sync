@@ -5,7 +5,7 @@ Two parts:
 | Part | Folder | What it does |
 |---|---|---|
 | **HA Sync.app** | `mac/` | Menu bar app. Reads the Calendar calendars, Reminders lists, Photos albums (your own, iCloud Shared and smart albums) and Notes folders you pick, and pushes them to Home Assistant on a timer. Calendar/Reminders changes also sync within ~10 s. |
-| **Mac Sync integration** | `ha/custom_components/mac_sync/` | Custom Home Assistant integration that receives the data and creates entities. |
+| **Mac Sync integration** | `custom_components/mac_sync/` | Custom Home Assistant integration that receives the data and creates entities. |
 
 ## What shows up in Home Assistant
 
@@ -21,7 +21,7 @@ All entities sit under one device named after your Mac.
 ## Setup
 
 ### 1. Home Assistant
-1. Copy `ha/custom_components/mac_sync` to `/config/custom_components/mac_sync` (Samba, SSH or the File editor add-on).
+1. Install with HACS: **HACS → ⋮ → Custom repositories**, add `https://github.com/bisman-automations/ha-sync` as an **Integration**, then download **Mac Sync**. Or copy `custom_components/mac_sync` to `/config/custom_components/mac_sync` yourself.
 2. Restart Home Assistant.
 3. **Settings → Devices & services → Add integration → Mac Sync**.
 4. In your profile (admin user): **Security → Long-lived access tokens → Create token**. Copy it.
