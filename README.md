@@ -29,6 +29,9 @@ All entities sit under one device named after your Mac.
 4. In your profile (admin user): **Security → Long-lived access tokens → Create token**. Copy it.
 
 ### 2. Mac
+Download `HA-Sync.zip` from the [latest release](https://github.com/bisman-automations/ha-sync/releases/latest), unzip it, and move **HA Sync.app** to Applications. If the release isn't notarized yet, right-click the app and choose **Open** the first time.
+
+Or build it yourself:
 ```bash
 cd mac && ./build.sh
 ```
@@ -57,3 +60,11 @@ Requires macOS 14+ and Xcode / Command Line Tools to build.
 - `POST /api/mac_sync/photo`, multipart with the fields `album`, `filename` and `file`.
 
 Both need `Authorization: Bearer <admin long-lived token>`.
+
+## Releases
+Releases work the same way as in every bisman-automations repo:
+1. In the release commit, bump `version` in `custom_components/mac_sync/manifest.json` and add a `## [X.Y.Z] - YYYY-MM-DD` section to `CHANGELOG.md`.
+2. Push to `main`. The **Draft release** workflow creates or refreshes the draft `vX.Y.Z` with those notes, `mac_sync.zip` and `HA-Sync.zip` (the Mac app, built on a macOS runner with the same version).
+3. Review the draft and publish it. Publishing creates the tag, and **Release check** confirms it.
+
+The Mac app is signed, notarized and stapled when the repo has these secrets: `MACOS_CERTIFICATE_P12`, `MACOS_CERTIFICATE_PASSWORD`, `APPLE_ID`, `APPLE_TEAM_ID` and `APPLE_APP_PASSWORD`. Without them, it's ad-hoc signed.

@@ -1,0 +1,148 @@
+# Draft release: on every push to main, create or refresh the DRAFT release for
+# the version in manifest.json, with that version's CHANGELOG.md section as the
+# notes and the integration zip attached. It never publishes: Donavan reviews
+# and publishes the draft, which creates the tag. Shared workflow:
+# https://github.com/bisman-automations/.github (.github/workflows/ha-draft-release.yml).
+#
+# This repo also ships a macOS app, so a second job builds HA Sync.app on a
+# macOS runner and attaches HA-Sync.zip to that same draft.
+#
+# Signing (optional). Without these secrets the app is ad-hoc signed and macOS
+# warns on first open (right-click → Open). With them it is signed with a
+# Developer ID, notarized and stapled, and opens without a warning:
+#   MACOS_CERTIFICATE_P12       base64 of the "Developer ID Application" .p12
+#   MACOS_CERTIFICATE_PASSWORD  password of that .p12
+#   APPLE_ID                    Apple ID email used for notarization
+#   APPLE_TEAM_ID               10-character team ID
+#   APPLE_APP_PASSWORD          app-specific password for that Apple ID
+name: Draft release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Creating and editing a draft release needs write access to contents.
+permissions:
+  contents: write
+
+jobs:
+  draft:
+    uses: bisman-automations/.github/.github/workflows/ha-draft-release.yml@main
+
+  mac-app:
+    name: Build HA Sync.app
+    needs: draft
+    runs-on: macos-15
+    concurrency:
+      # One upload at a time per repository; never cancel one midway.
+      group: mac-app-${{ github.repository }}
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      BOT: github-actions[bot]
+      ZIP: HA-Sync.zip
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Import the Developer ID certificate
+        id: cert
+        env:
+          P12: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+          P12_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "$P12" ]; then
+            echo "No MACOS_CERTIFICATE_P12 secret: building ad-hoc signed."
+            echo "identity=-" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          kc="$RUNNER_TEMP/signing.keychain-db"
+          kc_pw=$(uuidgen)
+          security create-keychain -p "$kc_pw" "$kc"
+          security set-keychain-settings -lut 21600 "$kc"
+          security unlock-keychain -p "$kc_pw" "$kc"
+          printf '%s' "$P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -k "$kc" -P "$P12_PASSWORD" -f pkcs12 -A -t cert
+          rm -f "$RUNNER_TEMP/cert.p12"
+          security set-key-partition-list -S apple-tool:,apple: -k "$kc_pw" "$kc" >/dev/null
+          security list-keychains -d user -s "$kc" $(security list-keychains -d user | tr -d '"')
+          # Reads every line (no early exit), so pipefail never sees SIGPIPE.
+          identity=$(security find-identity -v -p codesigning "$kc" \
+            | awk -F'"' '!found && /Developer ID Application/ { print $2; found = 1 }')
+          if [ -z "$identity" ]; then
+            echo "::error::No 'Developer ID Application' identity in MACOS_CERTIFICATE_P12."
+            exit 1
+          fi
+          echo "identity=$identity" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        env:
+          SIGN_IDENTITY: ${{ steps.cert.outputs.identity }}
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          swift --version
+          ./mac/build.sh
+          lipo -archs "mac/build/HA Sync.app/Contents/MacOS/HASync"
+
+      - name: Notarize and staple
+        if: steps.cert.outputs.identity != '-'
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "$APPLE_ID" ] || [ -z "$APPLE_TEAM_ID" ] || [ -z "$APPLE_APP_PASSWORD" ]; then
+            echo "::warning::Signed but not notarized: set APPLE_ID, APPLE_TEAM_ID and APPLE_APP_PASSWORD."
+            exit 0
+          fi
+          cd mac/build
+          ditto -c -k --keepParent "HA Sync.app" notarize.zip
+          xcrun notarytool submit notarize.zip --wait \
+            --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_PASSWORD"
+          xcrun stapler staple "HA Sync.app"
+          rm notarize.zip
+
+      - name: Zip the app
+        run: |
+          set -euo pipefail
+          cd mac/build
+          ditto -c -k --keepParent "HA Sync.app" "$ZIP"
+          ls -lh "$ZIP"
+
+      - name: Attach to the draft release
+        env:
+          IDENTITY: ${{ steps.cert.outputs.identity }}
+        run: |
+          set -euo pipefail
+          # The draft job above just created or refreshed this version's draft
+          # and removed its older drafts, so the newest draft it made is ours.
+          gh api "repos/${REPO}/releases?per_page=100" > releases.json
+          draft_id=$(jq -r --arg bot "$BOT" \
+            '[.[] | select(.draft and .author.login == $bot)] | sort_by(.created_at) | last | .id // empty' releases.json)
+          if [ -z "$draft_id" ]; then
+            echo "::error::No draft release from the draft job to attach ${ZIP} to."
+            exit 1
+          fi
+          # Upload by release id (a draft's pending tag can't be looked up by
+          # tag), replacing an existing asset of the same name.
+          gh api "repos/${REPO}/releases/${draft_id}" > draft.json
+          tag=$(jq -r .tag_name draft.json)
+          asset_id=$(jq -r --arg n "$ZIP" '[.assets[] | select(.name == $n)][0].id // empty' draft.json)
+          if [ -n "$asset_id" ]; then
+            gh api -X DELETE "repos/${REPO}/releases/assets/${asset_id}"
+            echo "Removed existing ${ZIP}"
+          fi
+          upload_url=$(jq -r '.upload_url | sub("\\{\\?name,label\\}$"; "")' draft.json)
+          gh api -X POST "${upload_url}?name=${ZIP}" \
+            -H "Content-Type: application/zip" \
+            --input "mac/build/${ZIP}" >/dev/null
+          echo "Attached ${ZIP} to draft ${tag}"
+          {
+            echo "### HA Sync.app"
+            echo
+            echo "Attached \`${ZIP}\` to draft ${tag} (signed with: \`${IDENTITY}\`)."
+          } >> "$GITHUB_STEP_SUMMARY"

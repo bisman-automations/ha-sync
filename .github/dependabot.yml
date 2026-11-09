@@ -1,0 +1,11 @@
+# Dependabot: weekly update PRs for the GitHub Actions used here.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      actions:
+        patterns: ["*"]
