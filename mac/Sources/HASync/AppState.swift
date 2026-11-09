@@ -15,19 +15,19 @@ final class AppState: ObservableObject {
     @Published var intervalMinutes: Int { didSet { d.set(intervalMinutes, forKey: "interval"); restartLoop() } }
 
     // Calendar / Reminders
-    @Published var calendarIDs: Set<String> { didSet { saveSet(calendarIDs, "calendarIDs") } }
-    @Published var reminderListIDs: Set<String> { didSet { saveSet(reminderListIDs, "reminderListIDs") } }
+    @Published var calendarIDs: Set<String> { didSet { saveSet(calendarIDs, "calendarIDs"); selectionChanged() } }
+    @Published var reminderListIDs: Set<String> { didSet { saveSet(reminderListIDs, "reminderListIDs"); selectionChanged() } }
     @Published var daysBack: Int { didSet { d.set(daysBack, forKey: "daysBack") } }
     @Published var daysAhead: Int { didSet { d.set(daysAhead, forKey: "daysAhead") } }
     @Published var includeCompleted: Bool { didSet { d.set(includeCompleted, forKey: "includeCompleted") } }
 
     // Photos
-    @Published var albumIDs: Set<String> { didSet { saveSet(albumIDs, "albumIDs") } }
+    @Published var albumIDs: Set<String> { didSet { saveSet(albumIDs, "albumIDs"); selectionChanged(includePhotos: true) } }
     @Published var maxPhotosPerAlbum: Int { didSet { d.set(maxPhotosPerAlbum, forKey: "maxPhotos") } }
     @Published var maxPixel: Int { didSet { d.set(maxPixel, forKey: "maxPixel") } }
 
     // Notes
-    @Published var noteFolderIDs: Set<String> { didSet { saveSet(noteFolderIDs, "noteFolderIDs") } }
+    @Published var noteFolderIDs: Set<String> { didSet { saveSet(noteFolderIDs, "noteFolderIDs"); selectionChanged() } }
     @Published var noteBodyLimit: Int { didSet { d.set(noteBodyLimit, forKey: "noteBodyLimit") } }
 
     // Catalogs shown in Settings
@@ -132,13 +132,30 @@ final class AppState: ObservableObject {
         }
     }
 
-    private func scheduleSoonSync() {
+    private var pendingPhotos = false
+
+    /// Debounced sync. Several quick changes (ticking a few boxes) become one sync.
+    private func scheduleSoonSync(after seconds: Int = 10, includePhotos: Bool = false) {
         debounceTask?.cancel()
+        pendingPhotos = pendingPhotos || includePhotos
         debounceTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(10))
-            guard !Task.isCancelled else { return }
-            await self?.syncNow(includePhotos: false)
+            try? await Task.sleep(for: .seconds(seconds))
+            guard !Task.isCancelled, let self else { return }
+            // A sync already running read the old selection; wait for it, then send ours.
+            while self.isSyncing {
+                try? await Task.sleep(for: .seconds(2))
+                if Task.isCancelled { return }
+            }
+            let photos = self.pendingPhotos
+            self.pendingPhotos = false
+            await self.syncNow(includePhotos: photos)
         }
+    }
+
+    /// A box was ticked or unticked in Settings: send it to Home Assistant soon, so an
+    /// unchecked calendar, list, folder or album goes unavailable there (and can be deleted).
+    private func selectionChanged(includePhotos: Bool = false) {
+        scheduleSoonSync(after: 3, includePhotos: includePhotos)
     }
 
     // MARK: Sync

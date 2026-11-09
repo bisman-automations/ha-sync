@@ -3,6 +3,17 @@
 All notable changes to this project are documented here. Each release's
 section becomes its GitHub release notes.
 
+## [1.0.1] - 2026-11-09
+
+### Fixed
+- Unchecking a calendar, Reminders list, Notes folder or photo album on the
+  Mac now makes its Home Assistant entity unavailable in a way you can
+  delete it. Before, it went unavailable but Home Assistant wouldn't offer
+  Delete, because the integration still provided it. Checking it again
+  brings back the same entity with the same entity ID.
+- The Mac app now syncs about 3 seconds after you check or uncheck
+  something in Settings, instead of at the next scheduled sync.
+
 ## [1.0.0] - 2026-11-09
 
 ### Added

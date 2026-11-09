@@ -49,8 +49,10 @@ class MacSyncEntity(Entity):
 
     @callback
     def _handle_update(self) -> None:
-        if item := self.item:
-            self._attr_name = item.get("title", self._attr_name)
+        item = self.item
+        if item is None:
+            return  # setup_dynamic is removing this entity
+        self._attr_name = item.get("title", self._attr_name)
         self._refresh()
         self.async_write_ha_state()
 
@@ -71,18 +73,32 @@ def setup_dynamic(
     entry: ConfigEntry,
     store: MacSyncStore,
     section: str,
-    factory: Callable[[str], Entity],
+    factory: Callable[[str], MacSyncEntity],
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Add an entity for every item in a section, now and whenever new ones arrive."""
-    known: set[str] = set()
+    """Keep one entity per item in a section in step with what the Mac sends.
+
+    New items get an entity. When an item stops being sent (unchecked on the
+    Mac, or deleted there), its entity is removed but its entity registry entry
+    is kept: Home Assistant then shows it as unavailable and "no longer
+    provided", which is what lets you delete it in the UI. If the item comes
+    back, the same entity (same unique_id and entity_id) is added again.
+    """
+    current: dict[str, MacSyncEntity] = {}
 
     @callback
-    def _add_new() -> None:
-        new_ids = [i for i in store.data[section] if i not in known]
-        known.update(new_ids)
+    def _sync_entities() -> None:
+        items = store.data[section]
+        for item_id in [i for i in current if i not in items]:
+            entity = current.pop(item_id)
+            # force_remove=False keeps the registry entry and writes the
+            # restored "unavailable" state that makes the entity deletable.
+            hass.async_create_task(entity.async_remove(force_remove=False))
+        new_ids = [i for i in items if i not in current]
         if new_ids:
-            async_add_entities([factory(i) for i in new_ids])
+            new = {i: factory(i) for i in new_ids}
+            current.update(new)
+            async_add_entities(list(new.values()))
 
-    _add_new()
-    entry.async_on_unload(async_dispatcher_connect(hass, SIGNAL_UPDATE, _add_new))
+    _sync_entities()
+    entry.async_on_unload(async_dispatcher_connect(hass, SIGNAL_UPDATE, _sync_entities))

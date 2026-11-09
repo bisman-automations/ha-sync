@@ -34,7 +34,7 @@ _LOGGER = logging.getLogger(__name__)
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 PLATFORMS = [Platform.CALENDAR, Platform.TODO, Platform.SENSOR]
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 
 _SAFE = re.compile(r"[^A-Za-z0-9._-]+")
 
