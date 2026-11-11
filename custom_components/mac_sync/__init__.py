@@ -1,11 +1,12 @@
 """Mac Sync: receive macOS Calendar, Reminders, Notes and Photos pushed from a Mac."""
+
 from __future__ import annotations
 
+from http import HTTPStatus
 import logging
+from pathlib import Path
 import re
 import shutil
-from http import HTTPStatus
-from pathlib import Path
 from typing import Any
 
 from aiohttp import web
@@ -34,7 +35,7 @@ _LOGGER = logging.getLogger(__name__)
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 PLATFORMS = [Platform.CALENDAR, Platform.TODO, Platform.SENSOR]
-VERSION = "1.0.1"
+VERSION = "1.0.2"
 
 _SAFE = re.compile(r"[^A-Za-z0-9._-]+")
 
@@ -72,7 +73,9 @@ class MacSyncStore:
             if items is None:
                 continue  # section not sent: leave as-is
             self.data[section] = {
-                str(item["id"]): item for item in items if isinstance(item, dict) and "id" in item
+                str(item["id"]): item
+                for item in items
+                if isinstance(item, dict) and "id" in item
             }
         self.data["last_sync"] = dt_util.utcnow().isoformat()
         self.data["source"] = payload.get("source")
@@ -86,7 +89,9 @@ class MacSyncStore:
             for album in self.data[SECTION_ALBUMS].values():
                 slug = safe_name(album.get("slug") or album["title"])
                 album["slug"] = slug
-                album["synced"] = len(album.get("files", [])) - len(missing.get(slug, []))
+                album["synced"] = len(album.get("files", [])) - len(
+                    missing.get(slug, [])
+                )
 
         self._store.async_delay_save(lambda: self.data, 2)
         async_dispatcher_send(self.hass, SIGNAL_UPDATE)
@@ -132,7 +137,9 @@ class PushView(HomeAssistantView):
             return self.json_message("Admin token required", HTTPStatus.UNAUTHORIZED)
         store: MacSyncStore | None = hass.data.get(DOMAIN)
         if store is None:
-            return self.json_message("Mac Sync is not set up", HTTPStatus.SERVICE_UNAVAILABLE)
+            return self.json_message(
+                "Mac Sync is not set up", HTTPStatus.SERVICE_UNAVAILABLE
+            )
         try:
             payload = await request.json()
         except ValueError:
@@ -152,7 +159,9 @@ class PhotoView(HomeAssistantView):
         if not request["hass_user"].is_admin:
             return self.json_message("Admin token required", HTTPStatus.UNAUTHORIZED)
         if DOMAIN not in hass.data:
-            return self.json_message("Mac Sync is not set up", HTTPStatus.SERVICE_UNAVAILABLE)
+            return self.json_message(
+                "Mac Sync is not set up", HTTPStatus.SERVICE_UNAVAILABLE
+            )
 
         fields: dict[str, Any] = {}
         reader = await request.multipart()
@@ -163,7 +172,9 @@ class PhotoView(HomeAssistantView):
                 fields[part.name] = await part.text()
 
         if not all(k in fields for k in ("album", "filename", "file")):
-            return self.json_message("album, filename and file are required", HTTPStatus.BAD_REQUEST)
+            return self.json_message(
+                "album, filename and file are required", HTTPStatus.BAD_REQUEST
+            )
 
         folder = media_root(hass) / safe_name(fields["album"])
         target = folder / safe_name(fields["filename"])

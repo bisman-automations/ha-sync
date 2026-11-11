@@ -1,4 +1,5 @@
 """To-do list entities mirroring macOS Reminders lists (read-only)."""
+
 from __future__ import annotations
 
 from homeassistant.components.todo import TodoItem, TodoItemStatus, TodoListEntity
@@ -16,7 +17,10 @@ async def async_setup_entry(
 ) -> None:
     store = hass.data[DOMAIN]
     setup_dynamic(
-        hass, entry, store, SECTION_REMINDERS,
+        hass,
+        entry,
+        store,
+        SECTION_REMINDERS,
         lambda item_id: MacReminderList(entry, store, SECTION_REMINDERS, item_id),
         async_add_entities,
     )
@@ -37,7 +41,9 @@ class MacReminderList(MacSyncEntity, TodoListEntity):
                 TodoItem(
                     uid=raw.get("uid"),
                     summary=raw.get("title") or "(No title)",
-                    status=TodoItemStatus.COMPLETED if raw.get("completed") else TodoItemStatus.NEEDS_ACTION,
+                    status=TodoItemStatus.COMPLETED
+                    if raw.get("completed")
+                    else TodoItemStatus.NEEDS_ACTION,
                     due=due,
                     description=raw.get("notes"),
                 )

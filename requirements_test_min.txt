@@ -1,0 +1,8 @@
+# The oldest Home Assistant this integration supports (hacs.json: 2024.6.0).
+# pytest-homeassistant-custom-component 0.13.136 is Home Assistant 2024.6.4,
+# the newest harness release of 2024.6. It needs Python 3.12 (python-min in
+# .github/workflows/test.yml). Raise this together with hacs.json; see CLAUDE.md.
+pytest-homeassistant-custom-component==0.13.136
+# josepy 2.x removed ComparableX509, which acme 2.10 (Home Assistant 2024.6)
+# still imports. 1.15.0 is the 1.x line that release expected.
+josepy==1.15.0

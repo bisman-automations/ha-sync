@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Mac Sync",
-        "description": "Receive Calendar, Reminders, Notes and Photos from the Mac Sync menu bar app. After adding this, point the Mac app at this Home Assistant instance with a long-lived access token."
+        "description": "Receive Calendar, Reminders, Notes and Photos from the HA Sync menu bar app. After adding this, point HA Sync at this Home Assistant instance with a long-lived access token."
       }
     },
     "abort": {

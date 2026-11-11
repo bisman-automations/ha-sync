@@ -1,4 +1,5 @@
 """Calendar entities mirroring macOS Calendar calendars."""
+
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta
@@ -46,7 +47,10 @@ async def async_setup_entry(
 ) -> None:
     store = hass.data[DOMAIN]
     setup_dynamic(
-        hass, entry, store, SECTION_CALENDARS,
+        hass,
+        entry,
+        store,
+        SECTION_CALENDARS,
         lambda item_id: MacCalendar(entry, store, SECTION_CALENDARS, item_id),
         async_add_entities,
     )
@@ -74,6 +78,7 @@ class MacCalendar(MacSyncEntity, CalendarEntity):
         self, hass: HomeAssistant, start_date: datetime, end_date: datetime
     ) -> list[CalendarEvent]:
         return [
-            e for e in self._events
+            e
+            for e in self._events
             if e.end_datetime_local > start_date and e.start_datetime_local < end_date
         ]

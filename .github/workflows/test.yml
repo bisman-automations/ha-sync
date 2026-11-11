@@ -1,0 +1,32 @@
+# Tests: lint and pytest on the oldest supported and the newest Home
+# Assistant (plus the upcoming one, information only). The jobs live in the
+# shared workflow so every bisman-automations repo tests the same way:
+# https://github.com/bisman-automations/.github
+# (.github/workflows/ha-test.yml documents every input).
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # Weekly on Thursday, the day after Home Assistant's betas are published,
+  # so a new release (newest job) or beta (next job) that breaks something
+  # shows up even when nothing here changed.
+  schedule:
+    - cron: "0 6 * * 4"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    uses: bisman-automations/.github/.github/workflows/ha-test.yml@main
+    with:
+      # hacs.json's minimum is Home Assistant 2024.6, which runs on Python
+      # 3.12. It does not install on 3.13: orjson 3.9.15 has no 3.13 wheel.
+      python-min: "3.12"

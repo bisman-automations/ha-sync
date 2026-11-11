@@ -1,11 +1,30 @@
 # Changelog
 
-All notable changes to this project are documented here. Each release's
-section becomes its GitHub release notes.
+All notable changes to this project are documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.0.2] - 2026-11-11
+
+### Added
+
+- A dark-theme icon for the Mac Sync page. It is the same artwork, which is
+  already a solid tile, so it reads on a dark background.
+
+### Changed
+
+- The README now matches the Mac app and the Mac Sync integration: macOS 14,
+  Home Assistant 2024.6 or newer, Marketplace and HACS install, every
+  setting, what shows up in Home Assistant, and troubleshooting.
+- The setup step names the menu bar app HA Sync.
+- Tests and CI follow the shared bisman-automations workflows. Ruff is
+  0.17.4. The oldest Home Assistant exercised in CI is still 2024.6.
 
 ## [1.0.1] - 2026-11-09
 
 ### Fixed
+
 - Unchecking a calendar, Reminders list, Notes folder or photo album on the
   Mac now makes its Home Assistant entity unavailable in a way you can
   delete it. Before, it went unavailable but Home Assistant wouldn't offer
@@ -17,6 +36,7 @@ section becomes its GitHub release notes.
 ## [1.0.0] - 2026-11-09
 
 ### Added
+
 - **HA Sync for macOS**: a menu bar app that sends the Calendar calendars,
   Reminders lists, Photos albums (including iCloud Shared Albums and smart
   albums) and Notes folders you choose to Home Assistant. It syncs on a
@@ -26,3 +46,7 @@ section becomes its GitHub release notes.
   to-do list for each Reminders list, a sensor for each Notes folder and for
   each photo album, and a last-sync sensor. Photos are saved to
   `/media/mac_sync/<album>/`.
+
+[1.0.2]: https://github.com/bisman-automations/ha-sync/compare/v1.0.1...v1.0.2
+[1.0.1]: https://github.com/bisman-automations/ha-sync/compare/v1.0.0...v1.0.1
+[1.0.0]: https://github.com/bisman-automations/ha-sync/releases/tag/v1.0.0

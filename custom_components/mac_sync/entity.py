@@ -1,4 +1,5 @@
 """Shared entity plumbing for Mac Sync."""
+
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -30,7 +31,9 @@ class MacSyncEntity(Entity):
     _attr_has_entity_name = True
     _attr_should_poll = False
 
-    def __init__(self, entry: ConfigEntry, store: MacSyncStore, section: str, item_id: str) -> None:
+    def __init__(
+        self, entry: ConfigEntry, store: MacSyncStore, section: str, item_id: str
+    ) -> None:
         self._store = store
         self._section = section
         self._item_id = item_id

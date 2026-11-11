@@ -1,4 +1,5 @@
 """Fixtures for Mac Sync tests."""
+
 import pytest
 
 

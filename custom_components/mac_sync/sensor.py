@@ -1,10 +1,15 @@
 """Sensors for Notes folders, Photos albums and sync status."""
+
 from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
 
-from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorStateClass,
+)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
@@ -23,12 +28,20 @@ async def async_setup_entry(
     store: MacSyncStore = hass.data[DOMAIN]
     async_add_entities([LastSyncSensor(entry, store)])
     setup_dynamic(
-        hass, entry, store, SECTION_NOTES,
-        lambda i: NotesFolderSensor(entry, store, SECTION_NOTES, i), async_add_entities,
+        hass,
+        entry,
+        store,
+        SECTION_NOTES,
+        lambda i: NotesFolderSensor(entry, store, SECTION_NOTES, i),
+        async_add_entities,
     )
     setup_dynamic(
-        hass, entry, store, SECTION_ALBUMS,
-        lambda i: AlbumSensor(entry, store, SECTION_ALBUMS, i), async_add_entities,
+        hass,
+        entry,
+        store,
+        SECTION_ALBUMS,
+        lambda i: AlbumSensor(entry, store, SECTION_ALBUMS, i),
+        async_add_entities,
     )
 
 
@@ -94,5 +107,7 @@ class LastSyncSensor(SensorEntity):
 
     async def async_added_to_hass(self) -> None:
         self.async_on_remove(
-            async_dispatcher_connect(self.hass, SIGNAL_UPDATE, callback(self.async_write_ha_state))
+            async_dispatcher_connect(
+                self.hass, SIGNAL_UPDATE, callback(self.async_write_ha_state)
+            )
         )
