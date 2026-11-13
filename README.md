@@ -5,7 +5,7 @@
 # HA Sync
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz/)
-[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.6%2B-blue.svg)](https://www.home-assistant.io/)
+[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.3%2B-blue.svg)](https://www.home-assistant.io/)
 [![GitHub Release](https://img.shields.io/github/v/release/bisman-automations/ha-sync)](https://github.com/bisman-automations/ha-sync/releases)
 [![Test](https://github.com/bisman-automations/ha-sync/actions/workflows/test.yml/badge.svg)](https://github.com/bisman-automations/ha-sync/actions/workflows/test.yml)
 [![Validate](https://github.com/bisman-automations/ha-sync/actions/workflows/validate.yml/badge.svg)](https://github.com/bisman-automations/ha-sync/actions/workflows/validate.yml)
@@ -22,7 +22,7 @@ Sync is one way, Mac to Home Assistant. Nothing you change in Home Assistant is 
 
 ## Requirements
 
-- Home Assistant 2024.6 or newer.
+- Home Assistant 2026.3 or newer.
 - The Mac Sync integration installed and added (see below). Photos need Home Assistant's media folder, which is included with Home Assistant.
 - An administrator long-lived access token. A token for a user who is not an administrator is rejected.
 - For the app: macOS 14 or later. Building it yourself also needs Xcode or the Command Line Tools, and `python3`.
@@ -210,7 +210,7 @@ ruff check . && ruff format --check .
 pytest
 ```
 
-Home Assistant 2024.6, the oldest version Mac Sync supports, is tested with Python 3.12 and `requirements_test_min.txt`. CI runs the same checks on every push and pull request, on both Home Assistant versions, plus hassfest, HACS validation and the shared repo standards, using the workflows in [bisman-automations/.github](https://github.com/bisman-automations/.github).
+Home Assistant 2026.3, the oldest version Mac Sync supports, is tested with Python 3.14 and `requirements_test_min.txt`. CI runs the same checks on every push and pull request, on both Home Assistant versions, plus hassfest, HACS validation and the shared repo standards, using the workflows in [bisman-automations/.github](https://github.com/bisman-automations/.github).
 
 The icon is drawn by `swift assets/logo.swift assets/logo.png` on a Mac. The app icon and the integration brand images are made from that file.
 

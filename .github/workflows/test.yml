@@ -27,6 +27,5 @@ jobs:
   test:
     uses: bisman-automations/.github/.github/workflows/ha-test.yml@main
     with:
-      # hacs.json's minimum is Home Assistant 2024.6, which runs on Python
-      # 3.12. It does not install on 3.13: orjson 3.9.15 has no 3.13 wheel.
-      python-min: "3.12"
+      # hacs.json's minimum is Home Assistant 2026.3, which needs Python 3.14.
+      python-min: "3.14"

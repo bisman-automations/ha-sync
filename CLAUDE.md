@@ -49,12 +49,10 @@ Secrets, all optional: `MACOS_CERTIFICATE_P12`,
 `MACOS_CERTIFICATE_PASSWORD`, `APPLE_ID`, `APPLE_TEAM_ID`,
 `APPLE_APP_PASSWORD`.
 
-Home Assistant minimum is 2024.6 (`hacs.json`). `requirements_test_min.txt`
-pins pytest-homeassistant-custom-component 0.13.136 (Home Assistant 2024.6.4)
-and josepy 1.15.0, because josepy 2.x removed `ComparableX509` and the
-2024.6 acme client still imports it. `test.yml` sets `python-min` to 3.12:
-Home Assistant 2024.6 does not install on Python 3.13 (orjson 3.9.15 has no
-3.13 wheel).
+Home Assistant minimum is 2026.3 (`hacs.json`), the first release that shows
+an integration's own `brand/` icon. `requirements_test_min.txt` pins
+pytest-homeassistant-custom-component 0.13.320 (Home Assistant 2026.3.4), and
+`test.yml` sets `python-min` to 3.14.
 
 Sync is one way. A JSON section that is omitted is left as stored. An empty
 list removes those entities. Photo bytes are a second request; the push
