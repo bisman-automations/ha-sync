@@ -18,14 +18,17 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
 from . import MacSyncStore
-from .const import DOMAIN, MEDIA_SUBDIR, SECTION_ALBUMS, SECTION_NOTES, SIGNAL_UPDATE
+from .const import MEDIA_SUBDIR, SECTION_ALBUMS, SECTION_NOTES, SIGNAL_UPDATE
 from .entity import MacSyncEntity, device_info, setup_dynamic
+
+# Coordinator or push updates; nothing polls on its own.
+PARALLEL_UPDATES = 0
 
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    store: MacSyncStore = hass.data[DOMAIN]
+    store: MacSyncStore = entry.runtime_data
     async_add_entities([LastSyncSensor(entry, store)])
     setup_dynamic(
         hass,

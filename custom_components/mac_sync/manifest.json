@@ -1,13 +1,19 @@
 {
   "domain": "mac_sync",
   "name": "Mac Sync",
-  "codeowners": ["@donavanbecker"],
+  "codeowners": [
+    "@donavanbecker"
+  ],
   "config_flow": true,
-  "dependencies": ["http", "media_source"],
+  "dependencies": [
+    "http",
+    "media_source"
+  ],
   "documentation": "https://github.com/bisman-automations/ha-sync",
+  "integration_type": "device",
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/bisman-automations/ha-sync/issues",
   "requirements": [],
   "single_config_entry": true,
-  "version": "1.0.2"
+  "version": "1.0.3"
 }

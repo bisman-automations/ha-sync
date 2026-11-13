@@ -11,8 +11,11 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN, SECTION_CALENDARS
+from .const import SECTION_CALENDARS
 from .entity import MacSyncEntity, setup_dynamic
+
+# Coordinator or push updates; nothing polls on its own.
+PARALLEL_UPDATES = 0
 
 
 def _to_event(raw: dict[str, Any]) -> CalendarEvent | None:
@@ -45,7 +48,7 @@ def _to_event(raw: dict[str, Any]) -> CalendarEvent | None:
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    store = hass.data[DOMAIN]
+    store = entry.runtime_data
     setup_dynamic(
         hass,
         entry,

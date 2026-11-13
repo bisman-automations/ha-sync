@@ -12,7 +12,7 @@ from typing import Any
 from aiohttp import web
 
 from homeassistant.components.http import KEY_HASS, HomeAssistantView
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
@@ -35,7 +35,7 @@ _LOGGER = logging.getLogger(__name__)
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 PLATFORMS = [Platform.CALENDAR, Platform.TODO, Platform.SENSOR]
-VERSION = "1.0.2"
+VERSION = "1.0.3"
 
 _SAFE = re.compile(r"[^A-Za-z0-9._-]+")
 
@@ -129,13 +129,13 @@ class PushView(HomeAssistantView):
 
     async def get(self, request: web.Request) -> web.Response:
         hass = request.app[KEY_HASS]
-        return self.json({"ok": DOMAIN in hass.data, "version": VERSION})
+        return self.json({"ok": _store(hass) is not None, "version": VERSION})
 
     async def post(self, request: web.Request) -> web.Response:
         hass = request.app[KEY_HASS]
         if not request["hass_user"].is_admin:
             return self.json_message("Admin token required", HTTPStatus.UNAUTHORIZED)
-        store: MacSyncStore | None = hass.data.get(DOMAIN)
+        store = _store(hass)
         if store is None:
             return self.json_message(
                 "Mac Sync is not set up", HTTPStatus.SERVICE_UNAVAILABLE
@@ -158,7 +158,7 @@ class PhotoView(HomeAssistantView):
         hass = request.app[KEY_HASS]
         if not request["hass_user"].is_admin:
             return self.json_message("Admin token required", HTTPStatus.UNAUTHORIZED)
-        if DOMAIN not in hass.data:
+        if _store(hass) is None:
             return self.json_message(
                 "Mac Sync is not set up", HTTPStatus.SERVICE_UNAVAILABLE
             )
@@ -196,15 +196,21 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
     return True
 
 
+def _store(hass: HomeAssistant) -> MacSyncStore | None:
+    """The loaded entry's store (there is only one entry), or None."""
+    for entry in hass.config_entries.async_entries(DOMAIN):
+        if entry.state is ConfigEntryState.LOADED:
+            return getattr(entry, "runtime_data", None)
+    return None
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     store = MacSyncStore(hass)
     await store.async_load()
-    hass.data[DOMAIN] = store
+    entry.runtime_data = store
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    if ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
-        hass.data.pop(DOMAIN, None)
-    return ok
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)

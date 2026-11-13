@@ -5,6 +5,14 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2026-11-13
+
+### Changed
+
+- **Shown as a device.** Home Assistant now lists Mac Sync as a device: your Mac.
+- **Tidier setup.** Mac Sync keeps its data with its own entry, as Home Assistant recommends. Nothing changes for you.
+- **Smoother updates.** Each kind of entity now tells Home Assistant how many updates it can take at once, as Home Assistant recommends. Nothing changes in how anything looks or works.
+
 ## [1.0.2] - 2026-11-11
 
 ### Added
@@ -47,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   each photo album, and a last-sync sensor. Photos are saved to
   `/media/mac_sync/<album>/`.
 
+[1.0.3]: https://github.com/bisman-automations/ha-sync/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/bisman-automations/ha-sync/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/bisman-automations/ha-sync/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/bisman-automations/ha-sync/releases/tag/v1.0.0

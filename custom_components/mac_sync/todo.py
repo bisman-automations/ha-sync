@@ -8,14 +8,17 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN, SECTION_REMINDERS
+from .const import SECTION_REMINDERS
 from .entity import MacSyncEntity, setup_dynamic
+
+# Coordinator or push updates; nothing polls on its own.
+PARALLEL_UPDATES = 0
 
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    store = hass.data[DOMAIN]
+    store = entry.runtime_data
     setup_dynamic(
         hass,
         entry,
