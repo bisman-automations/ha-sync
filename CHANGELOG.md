@@ -5,6 +5,17 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-11-17
+
+### Fixed
+
+- **A bad push is turned away instead of failing.** A push that isn't a JSON object, such as a list, or has a section that isn't a list, now gets a clear 400 answer and changes nothing. Before, Home Assistant hit an error and answered 500. Raised in the review for the default HACS list.
+- **One odd item no longer stops a push.** An album with no title or slug, an item without an id, or an event, reminder or note with the wrong kind of value is skipped and logged as a warning. Everything else in the push is still saved. The answer lists how many were skipped in each section.
+
+### Changed
+
+- Ruff 0.17.5 for the lint checks.
+
 ## [1.1.0] - 2026-11-13
 
 ### Changed
@@ -61,6 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   each photo album, and a last-sync sensor. Photos are saved to
   `/media/mac_sync/<album>/`.
 
+[1.1.1]: https://github.com/bisman-automations/ha-sync/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/bisman-automations/ha-sync/compare/v1.0.3...v1.1.0
 [1.0.3]: https://github.com/bisman-automations/ha-sync/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/bisman-automations/ha-sync/compare/v1.0.1...v1.0.2

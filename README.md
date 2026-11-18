@@ -155,7 +155,7 @@ Calendar and Reminders also sync about 10 seconds after a change in those apps. 
 
 Anything that can make an HTTPS request can push the same payload the app does. Both endpoints need `Authorization: Bearer <admin long-lived token>`.
 
-- `GET /api/mac_sync/push` returns `{"ok": true, "version": "1.0.2"}` when Mac Sync is set up. `ok` is false when the integration is installed but not added. `version` is the installed Mac Sync version.
+- `GET /api/mac_sync/push` returns `{"ok": true, "version": "1.1.1"}` when Mac Sync is set up. `ok` is false when the integration is installed but not added. `version` is the installed Mac Sync version.
 - `POST /api/mac_sync/push` takes JSON:
 
 ```json
@@ -172,7 +172,9 @@ Leave a section out to keep what Home Assistant already has. Send an empty list 
 
 - `POST /api/mac_sync/photo` is multipart form data with the fields `album` (the album slug), `filename` and `file` (the JPEG).
 
-A push that is not JSON, or a photo upload missing a field, is rejected. A token that is not an administrator's gets 401.
+Each item needs an `id` (text or a whole number). An album also needs a `title` or a `slug`, which names its photo folder. Each event needs a `start` and an `end`. Fields that are sent must have the right type: text, true or false, or a list.
+
+A push that is not JSON, isn't a JSON object, or has a section that isn't a list is rejected with 400 and changes nothing. A single item, event, reminder or note that is missing something or has the wrong type is skipped instead, and the rest of the push is still saved. Each skipped one is logged as a warning in Home Assistant, and the response adds `"skipped": {"<section>": <count>}`. A photo upload missing a field is rejected. A token that is not an administrator's gets 401.
 
 ## Troubleshooting
 

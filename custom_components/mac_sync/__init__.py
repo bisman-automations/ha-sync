@@ -10,6 +10,8 @@ import shutil
 from typing import Any
 
 from aiohttp import web
+import voluptuous as vol
+from voluptuous.humanize import humanize_error
 
 from homeassistant.components.http import KEY_HASS, HomeAssistantView
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
@@ -30,12 +32,13 @@ from .const import (
     STORAGE_KEY,
     STORAGE_VERSION,
 )
+from .schema import clean_payload
 
 _LOGGER = logging.getLogger(__name__)
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 PLATFORMS = [Platform.CALENDAR, Platform.TODO, Platform.SENSOR]
-VERSION = "1.1.0"
+VERSION = "1.1.1"
 
 _SAFE = re.compile(r"[^A-Za-z0-9._-]+")
 
@@ -67,16 +70,22 @@ class MacSyncStore:
             self.data.update(stored)
 
     async def async_apply(self, payload: dict[str, Any]) -> dict[str, Any]:
-        """Apply a push from the Mac. Returns photo files HA still needs."""
+        """Apply a push from the Mac. Returns photo files HA still needs.
+
+        ``payload`` must already have been through
+        :func:`.schema.clean_payload`: it is an object, every section sent is a
+        list of items that each have a string ``id``, and every album has a
+        ``title`` or ``slug``.
+        """
         for section in SECTIONS:
             items = payload.get(section)
             if items is None:
                 continue  # section not sent: leave as-is
-            self.data[section] = {
-                str(item["id"]): item
-                for item in items
-                if isinstance(item, dict) and "id" in item
-            }
+            self.data[section] = {str(item["id"]): item for item in items}
+            if section == SECTION_ALBUMS:
+                # Settle each album's folder name once, before touching disk.
+                for album in self.data[section].values():
+                    album["slug"] = safe_name(album.get("slug") or album["title"])
         self.data["last_sync"] = dt_util.utcnow().isoformat()
         self.data["source"] = payload.get("source")
 
@@ -87,8 +96,7 @@ class MacSyncStore:
             )
             # Count only what's actually on disk so sensors are honest.
             for album in self.data[SECTION_ALBUMS].values():
-                slug = safe_name(album.get("slug") or album["title"])
-                album["slug"] = slug
+                slug = album["slug"]
                 album["synced"] = len(album.get("files", [])) - len(
                     missing.get(slug, [])
                 )
@@ -105,7 +113,7 @@ class MacSyncStore:
         wanted_dirs: set[str] = set()
         missing: dict[str, list[str]] = {}
         for album in albums:
-            slug = safe_name(album.get("slug") or album["title"])
+            slug = album["slug"]  # made safe in async_apply
             wanted_dirs.add(slug)
             folder = root / slug
             folder.mkdir(exist_ok=True)
@@ -141,11 +149,27 @@ class PushView(HomeAssistantView):
                 "Mac Sync is not set up", HTTPStatus.SERVICE_UNAVAILABLE
             )
         try:
-            payload = await request.json()
+            raw = await request.json()
         except ValueError:
             return self.json_message("Invalid JSON", HTTPStatus.BAD_REQUEST)
-        result = await store.async_apply(payload)
-        return self.json({"ok": True, **result})
+        # Reject a body that isn't a push at all (a list, a number, a section
+        # that isn't a list, ...) with 400 instead of letting it raise later.
+        # Malformed items inside a valid push are skipped and logged by
+        # clean_payload, so one bad item can't stop the rest from syncing.
+        if not isinstance(raw, dict):
+            return self.json_message("Expected a JSON object", HTTPStatus.BAD_REQUEST)
+        try:
+            cleaned = clean_payload(raw)
+        except vol.Invalid as err:
+            return self.json_message(
+                f"Invalid push: {humanize_error(raw, err)}", HTTPStatus.BAD_REQUEST
+            )
+        result = await store.async_apply(cleaned.payload)
+        response: dict[str, Any] = {"ok": True, **result}
+        if cleaned.skipped:
+            # The Mac app ignores unknown keys; this is for anyone debugging.
+            response["skipped"] = cleaned.skipped
+        return self.json(response)
 
 
 class PhotoView(HomeAssistantView):

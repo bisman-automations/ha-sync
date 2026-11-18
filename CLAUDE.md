@@ -13,6 +13,9 @@ anything.
   and ServiceManagement, so it builds only on macOS 14 or newer.
 - `custom_components/mac_sync/`: the integration.
   - `__init__.py`: storage, media reconciliation, and the push and photo HTTP views.
+  - `schema.py`: voluptuous validation of a push. A bad envelope is a 400; a
+    malformed item or nested entry is skipped and logged. `async_apply` only
+    ever sees a cleaned payload. Keep it in step with `mac/.../Models.swift`.
   - `config_flow.py`: one config entry, no options.
   - `entity.py`: one entity per synced item. Dropping an item removes the
     entity but keeps the registry entry, so Home Assistant offers Delete.
