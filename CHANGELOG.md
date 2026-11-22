@@ -5,6 +5,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2026-11-22
+
+### Fixed
+
+- **Album counts update as photos arrive.** Each album's sensor now goes up as soon as a photo is uploaded. Before, it stayed at the old number until the next sync, so a new album showed 0 photos after its photos were already in Home Assistant.
+
+### Changed
+
+- **Less work on each sync.** A calendar, reminders list, notes folder or album that didn't change in a sync is no longer rewritten in Home Assistant, and the Last sync sensor is only written when the sync time changes. Nothing changes in what you see.
+
 ## [1.1.2] - 2026-11-21
 
 ### Changed
@@ -78,6 +88,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   each photo album, and a last-sync sensor. Photos are saved to
   `/media/mac_sync/<album>/`.
 
+[1.1.3]: https://github.com/bisman-automations/ha-sync/compare/v1.1.2...v1.1.3
 [1.1.2]: https://github.com/bisman-automations/ha-sync/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/bisman-automations/ha-sync/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/bisman-automations/ha-sync/compare/v1.0.3...v1.1.0

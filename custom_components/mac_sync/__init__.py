@@ -16,7 +16,7 @@ from voluptuous.humanize import humanize_error
 from homeassistant.components.http import KEY_HASS, HomeAssistantView
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.storage import Store
@@ -38,7 +38,7 @@ _LOGGER = logging.getLogger(__name__)
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 PLATFORMS = [Platform.CALENDAR, Platform.TODO, Platform.SENSOR]
-VERSION = "1.1.2"
+VERSION = "1.1.3"
 
 _SAFE = re.compile(r"[^A-Za-z0-9._-]+")
 
@@ -105,6 +105,28 @@ class MacSyncStore:
         async_dispatcher_send(self.hass, SIGNAL_UPDATE)
         self.hass.bus.async_fire(EVENT_UPDATED, {"source": self.data["source"]})
         return {"missing": missing}
+
+    @callback
+    def photo_added(self, slug: str, filename: str) -> None:
+        """Count a newly uploaded photo, so its album sensor is current now.
+
+        Without this the count only caught up at the next push, after the
+        Mac had already uploaded the photos the last push asked for.
+        """
+        for album_id, album in self.data[SECTION_ALBUMS].items():
+            if album.get("slug") != slug:
+                continue
+            files = album.get("files", [])
+            if filename not in {safe_name(f) for f in files}:
+                return
+            synced = min(album.get("synced", 0) + 1, len(files))
+            if synced == album.get("synced"):
+                return
+            # A new dict, so the album's entity sees a changed item.
+            self.data[SECTION_ALBUMS][album_id] = {**album, "synced": synced}
+            self._store.async_delay_save(lambda: self.data, 2)
+            async_dispatcher_send(self.hass, SIGNAL_UPDATE)
+            return
 
     def _reconcile_media(self, albums: list[dict[str, Any]]) -> dict[str, list[str]]:
         """Delete photos no longer in albums and report the ones not on disk yet."""
@@ -182,7 +204,8 @@ class PhotoView(HomeAssistantView):
         hass = request.app[KEY_HASS]
         if not request["hass_user"].is_admin:
             return self.json_message("Admin token required", HTTPStatus.UNAUTHORIZED)
-        if _store(hass) is None:
+        store = _store(hass)
+        if store is None:
             return self.json_message(
                 "Mac Sync is not set up", HTTPStatus.SERVICE_UNAVAILABLE
             )
@@ -203,13 +226,17 @@ class PhotoView(HomeAssistantView):
         folder = media_root(hass) / safe_name(fields["album"])
         target = folder / safe_name(fields["filename"])
 
-        def _write() -> None:
+        def _write() -> bool:
+            """Write the photo; True when the file wasn't there before."""
             folder.mkdir(parents=True, exist_ok=True)
+            is_new = not target.exists()
             tmp = target.with_suffix(target.suffix + ".part")
             tmp.write_bytes(fields["file"])
             tmp.replace(target)
+            return is_new
 
-        await hass.async_add_executor_job(_write)
+        if await hass.async_add_executor_job(_write):
+            store.photo_added(folder.name, target.name)
         return self.json({"ok": True})
 
 

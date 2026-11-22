@@ -102,15 +102,25 @@ class LastSyncSensor(SensorEntity):
         self._store = store
         self._attr_unique_id = f"{entry.entry_id}_last_sync"
         self._attr_device_info = device_info(entry, store)
+        self._written: str | None = None
 
     @property
     def native_value(self) -> datetime | None:
         raw = self._store.data.get("last_sync")
         return dt_util.parse_datetime(raw) if raw else None
 
+    @callback
+    def _handle_update(self) -> None:
+        # A photo upload signals too, without a new sync time: skip that write.
+        if self._store.data.get("last_sync") != self._written:
+            self.async_write_ha_state()
+
+    @callback
+    def async_write_ha_state(self) -> None:
+        self._written = self._store.data.get("last_sync")
+        super().async_write_ha_state()
+
     async def async_added_to_hass(self) -> None:
         self.async_on_remove(
-            async_dispatcher_connect(
-                self.hass, SIGNAL_UPDATE, callback(self.async_write_ha_state)
-            )
+            async_dispatcher_connect(self.hass, SIGNAL_UPDATE, self._handle_update)
         )

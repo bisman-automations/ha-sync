@@ -40,6 +40,10 @@ class MacSyncEntity(Entity):
         self._attr_unique_id = f"{entry.entry_id}_{section}_{item_id}"
         self._attr_device_info = device_info(entry, store)
         self._attr_name = (self.item or {}).get("title", item_id)
+        # The item as last written. A push replaces the items of each section
+        # it sends and leaves the others as the same objects, so an item that
+        # is the same object, or equal to it, has nothing new to show.
+        self._seen: dict[str, Any] | None = None
 
     @property
     def item(self) -> dict[str, Any] | None:
@@ -55,6 +59,9 @@ class MacSyncEntity(Entity):
         item = self.item
         if item is None:
             return  # setup_dynamic is removing this entity
+        if item is self._seen or item == self._seen:
+            return  # nothing this entity shows has changed
+        self._seen = item
         self._attr_name = item.get("title", self._attr_name)
         self._refresh()
         self.async_write_ha_state()
@@ -65,6 +72,7 @@ class MacSyncEntity(Entity):
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
+        self._seen = self.item
         self._refresh()
         self.async_on_remove(
             async_dispatcher_connect(self.hass, SIGNAL_UPDATE, self._handle_update)
